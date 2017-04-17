@@ -340,7 +340,6 @@ static int get_feature(char *section)
                       strlen(section)))
       return feature;
   }
-  LOG_WARN(LOG_TAG, "Feature is not supported %s", section);
   return -1;
 }
 
@@ -856,10 +855,6 @@ static void load_config()
           interop_entry_t *entry = list_node(node_entry);
           load_to_database(feature, entry->key, entry->value);
         }
-      }
-      else {
-        LOG_ERROR(LOG_TAG, " Invalid Section, ignoring the section %s",
-                            sec->name);
       }
     }
     pthread_mutex_unlock(&file_lock);
