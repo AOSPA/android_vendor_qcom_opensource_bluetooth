@@ -192,6 +192,7 @@ static const char* interop_feature_string_(const interop_feature_t feature)
     CASE_RETURN_STR(INTEROP_DISABLE_LE_CONN_PREFERRED_PARAMS)
     CASE_RETURN_STR(INTEROP_ADV_AVRCP_VER_1_3)
     CASE_RETURN_STR(INTEROP_DISABLE_AAC_CODEC)
+    CASE_RETURN_STR(INTEROP_ENABLE_AAC_CODEC)
     CASE_RETURN_STR(INTEROP_DYNAMIC_ROLE_SWITCH)
     CASE_RETURN_STR(INTEROP_DISABLE_ROLE_SWITCH)
     CASE_RETURN_STR(INTEROP_DISABLE_ROLE_SWITCH_POLICY)
@@ -339,7 +340,6 @@ static int get_feature(char *section)
                       strlen(section)))
       return feature;
   }
-  LOG_WARN(LOG_TAG, "Feature is not supported %s", section);
   return -1;
 }
 
@@ -855,10 +855,6 @@ static void load_config()
           interop_entry_t *entry = list_node(node_entry);
           load_to_database(feature, entry->key, entry->value);
         }
-      }
-      else {
-        LOG_ERROR(LOG_TAG, " Invalid Section, ignoring the section %s",
-                            sec->name);
       }
     }
     pthread_mutex_unlock(&file_lock);
