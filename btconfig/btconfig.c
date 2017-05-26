@@ -6523,7 +6523,10 @@ done:
 		fclose(stream);
 
 	if (ret < 0 && pdata->data)
+	{
 		free(pdata->data);
+		pdata->data = NULL;
+	}
 
 	return ret;
 }
