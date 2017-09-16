@@ -91,42 +91,6 @@ typedef struct {
   list_t *entries;
 } interop_section_t;
 
-typedef struct {
-  bt_bdaddr_t addr;
-  size_t length;
-  uint16_t max_lat;
-  interop_feature_t feature;
-} interop_hid_ssr_max_lat_t;
-
-typedef enum {
-    INTEROP_BL_TYPE_ADDR = 0,
-    INTEROP_BL_TYPE_NAME,
-    INTEROP_BL_TYPE_MANUFACTURE,
-    INTEROP_BL_TYPE_VNDR_PRDT,
-    INTEROP_BL_TYPE_SSR_MAX_LAT,
-
-} interop_bl_type;
-
-typedef enum {
-    INTEROP_ENTRY_TYPE_STATIC = 1 << 0,
-    INTEROP_ENTRY_TYPE_DYNAMIC = 1 << 1
-} interop_entry_type;
-
-
-typedef struct {
-    interop_bl_type bl_type;
-    interop_entry_type bl_entry_type;
-
-    union {
-        interop_addr_entry_t addr_entry;
-        interop_name_entry_t name_entry;
-        interop_manufacturer_t mnfr_entry;
-        interop_hid_multitouch_t vnr_pdt_entry;
-        interop_hid_ssr_max_lat_t ssr_max_lat_entry;
-    } entry_type;
-
-} interop_db_entry_t;
-
 // Config realted functions
 static void interop_config_cleanup(void);
 static void interop_free_entry_(void *data);
@@ -207,7 +171,6 @@ static const char* interop_feature_string_(const interop_feature_t feature)
     CASE_RETURN_STR(INTEROP_HFP_1_7_BLACKLIST)
     CASE_RETURN_STR(INTEROP_STORE_REMOTE_AVRCP_VERSION_1_4)
     CASE_RETURN_STR(INTEROP_ADV_PBAP_VER_1_1)
-    CASE_RETURN_STR(INTEROP_REMOTE_AVDTP_START)
     CASE_RETURN_STR(INTEROP_UPDATE_HID_SSR_MAX_LAT)
     CASE_RETURN_STR(INTEROP_DELAY_SCO_FOR_MT_CALL)
     CASE_RETURN_STR(INTEROP_DISABLE_CODEC_NEGOTIATION)
