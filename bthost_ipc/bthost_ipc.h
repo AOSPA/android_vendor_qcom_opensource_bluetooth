@@ -122,6 +122,15 @@ codec specific definitions
 #define APTX_HD_CODEC_ID 0x24
 #endif
 
+#ifndef VENDOR_LDAC
+#define VENDOR_LDAC 0x12D
+#endif
+#ifndef LDAC_CODEC_ID
+#define LDAC_CODEC_ID 0xAA
+#endif
+
+#define DEFAULT_MTU_SIZE 663
+
 #define A2D_SBC_FREQ_MASK 0xF0
 #define A2D_SBC_CHN_MASK  0x0F
 #define A2D_SBC_BLK_MASK  0xF0
@@ -151,6 +160,21 @@ codec specific definitions
 #define A2D_APTX_CHAN_MASK       0x0F
 #define A2D_APTX_CHAN_STEREO     0x02
 #define A2D_APTX_CHAN_MONO       0x01
+
+
+/* LDAC bitmask helper */
+#define A2D_LDAC_SAMP_FREQ_MASK  0x3F
+#define A2D_LDAC_SAMP_FREQ_44    0x20
+#define A2D_LDAC_SAMP_FREQ_48    0x10
+#define A2D_LDAC_SAMP_FREQ_88    0x08
+#define A2D_LDAC_SAMP_FREQ_96    0x04
+#define A2D_LDAC_SAMP_FREQ_176   0x02
+#define A2D_LDAC_SAMP_FREQ_192   0x01
+
+#define A2D_LDAC_CHAN_MASK       0x07
+#define A2D_LDAC_CHAN_STEREO     0x01
+#define A2D_LDAC_CHAN_MONO       0x04
+#define A2D_LDAC_CHAN_DUAL       0x02
 
 
 #define A2D_AAC_IE_OBJ_TYPE_MSK                0xF0    /* b7-b4 Object Type */
@@ -190,6 +214,17 @@ typedef struct {
     uint32_t bitrate;
 } audio_aptx_encoder_config_t;
 
+
+/* Information about BT LDAC encoder configuration
+ * This data is used between audio HAL module and
+ * BT IPC library to configure DSP encoder
+ */
+typedef struct {
+    uint32_t sampling_rate;
+    uint32_t bitrate;
+    uint16_t channel_mode;
+    uint16_t mtu;
+} audio_ldac_encoder_config_t;
 
 /* Information about BT AAC encoder configuration
  * This data is used between audio HAL module and

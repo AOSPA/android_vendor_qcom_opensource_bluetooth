@@ -84,10 +84,12 @@ bool resp_received = false;
 audio_sbc_encoder_config_t sbc_codec;
 audio_aptx_encoder_config_t aptx_codec;
 audio_aac_encoder_config_t aac_codec;
+audio_ldac_encoder_config_t ldac_codec;
 /*****************************************************************************
 **  Functions
 ******************************************************************************/
 void a2dp_open_ctrl_path(struct a2dp_stream_common *common);
+void ldac_codec_parser(uint8_t *codec_cfg);
 /*****************************************************************************
 **   Miscellaneous helper functions
 ******************************************************************************/
@@ -363,6 +365,12 @@ static void* a2dp_codec_parser(uint8_t *codec_cfg, audio_format_t *codec_type,
     }
     else if (codec_cfg[CODEC_OFFSET] == NON_A2DP_CODEC_TYPE)
     {
+        uint32_t vendor_ldac_id = 0x0;
+        vendor_ldac_id =  (codec_cfg[VENDOR_ID_OFFSET] & 0x000000FF) |
+                   ((codec_cfg[VENDOR_ID_OFFSET + 1]) << 8 & 0x0000FF00) |
+                   ((codec_cfg[VENDOR_ID_OFFSET + 2]) << 16 & 0x00FF0000) |
+                   ((codec_cfg[VENDOR_ID_OFFSET + 3]) << 24 & 0xFF000000);
+
         if (codec_cfg[VENDOR_ID_OFFSET] == VENDOR_APTX &&
             codec_cfg[CODEC_ID_OFFSET] == APTX_CODEC_ID)
         {
@@ -374,6 +382,15 @@ static void* a2dp_codec_parser(uint8_t *codec_cfg, audio_format_t *codec_type,
         {
             ALOGW("AptX-HD codec");
             *codec_type = AUDIO_FORMAT_APTX_HD;
+        }
+
+        if (vendor_ldac_id == VENDOR_LDAC &&
+            codec_cfg[CODEC_ID_OFFSET] == LDAC_CODEC_ID)
+        {
+            ALOGW("LDAC codec");
+            *codec_type = AUDIO_FORMAT_LDAC;
+            ldac_codec_parser(codec_cfg);
+            return ((void *)&ldac_codec);
         }
         memset(&aptx_codec,0,sizeof(audio_aptx_encoder_config_t));
         p_cfg++; //skip dev_idx
@@ -1216,4 +1233,63 @@ bool audio_is_scrambling_enabled(void)
     ALOGW("audio_is_scrambling_enabled = %s",dump_a2dp_ctrl_ack(status));
     pthread_mutex_unlock(&audio_stream.lock);
     return status == A2DP_CTRL_ACK_SUCCESS;
+}
+
+void ldac_codec_parser(uint8_t *codec_cfg)
+{
+    char byte,len;
+    uint8_t *p_cfg = codec_cfg;
+    memset(&ldac_codec,0,sizeof(audio_ldac_encoder_config_t));
+    p_cfg++; //skip dev_idx
+    len = *p_cfg++;//LOSC
+    p_cfg++; // Skip media type
+    len--;
+    p_cfg++; //codec_type
+    len--;
+    p_cfg+=4;//skip vendor id
+    len -= 4;
+    p_cfg += 2; //skip codec id
+    len -= 2;
+    byte = *p_cfg++;
+    len--;
+    switch (byte & A2D_LDAC_SAMP_FREQ_MASK)
+    {
+        case A2D_LDAC_SAMP_FREQ_44:
+             ldac_codec.sampling_rate = 44100;
+             break;
+        case A2D_LDAC_SAMP_FREQ_48:
+             ldac_codec.sampling_rate = 48000;
+             break;
+        case A2D_LDAC_SAMP_FREQ_88:
+             ldac_codec.sampling_rate = 88200;
+             break;
+        case A2D_LDAC_SAMP_FREQ_96:
+             ldac_codec.sampling_rate = 96000;
+             break;
+        case A2D_LDAC_SAMP_FREQ_176:
+             ldac_codec.sampling_rate = 176400;
+             break;
+        case A2D_LDAC_SAMP_FREQ_192:
+             ldac_codec.sampling_rate = 192000;
+             break;
+        default:
+             ALOGE("Unknown sampling rate");
+    }
+    byte = *p_cfg++;
+    len--;
+    ldac_codec.channel_mode = (byte & A2D_LDAC_CHAN_MASK);
+    if (len == 0)
+    {
+        ALOGW("Codec config copied");
+    }
+    ldac_codec.mtu = DEFAULT_MTU_SIZE;
+    p_cfg += 2;
+
+    ldac_codec.bitrate = *p_cfg++;
+    ldac_codec.bitrate |= (*p_cfg++ << 8);
+    ldac_codec.bitrate |= (*p_cfg++ << 16);
+    ldac_codec.bitrate |= (*p_cfg++ << 24);
+
+    ALOGW("%s: LDAC: bitrate: %lu", __func__, ldac_codec.bitrate);
+    ALOGW("LDAC: Done copying full codec config");
 }
