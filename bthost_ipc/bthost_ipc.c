@@ -77,6 +77,7 @@ static int test = 0;
 static bool update_initial_sink_latency = false;
 int wait_for_stack_response(uint8_t time_to_wait);
 bool resp_received = false;
+static char a2dp_hal_imp[PROPERTY_VALUE_MAX] = "false";
 /*****************************************************************************
 **  Static functions
 ******************************************************************************/
@@ -123,6 +124,7 @@ static const char* dump_a2dp_ctrl_ack(tA2DP_CTRL_ACK resp)
         CASE_RETURN_STR(A2DP_CTRL_ACK_UNSUPPORTED)
         CASE_RETURN_STR(A2DP_CTRL_ACK_PENDING)
         CASE_RETURN_STR(A2DP_CTRL_ACK_DISCONNECT_IN_PROGRESS)
+        CASE_RETURN_STR(A2DP_CTRL_ACK_PREVIOUS_COMMAND_PENDING)
         CASE_RETURN_STR(A2DP_CTRL_SKT_DISCONNECTED)
         CASE_RETURN_STR(A2DP_CTRL_ACK_UNKNOWN)
         default:
@@ -754,6 +756,16 @@ int audio_start_stream()
         pthread_mutex_unlock(&audio_stream.lock);
         return -1;
     }
+    if (property_get("persist.bt.a2dp.hal.implementation", a2dp_hal_imp, "false") &&
+            !strcmp(a2dp_hal_imp, "true"))
+    {
+      if (audio_stream.state == AUDIO_A2DP_STATE_STARTED)
+      {
+          INFO("stream already started");
+          pthread_mutex_unlock(&audio_stream.lock);
+          return 0;
+      }
+    }
     for (j = 0; j <STREAM_START_MAX_RETRY_LOOPER; j++) {
         for (i = 0; i < STREAM_START_MAX_RETRY_COUNT; i++)
         {
@@ -780,8 +792,25 @@ int audio_start_stream()
                 {
                     ALOGW("waiting in pending");
                     ack_recvd = 0;
-                    wait_for_stack_response(5);
-                    status = audio_stream.ack_status;
+                    if (property_get("persist.bt.a2dp.hal.implementation", a2dp_hal_imp, "false") &&
+                            !strcmp(a2dp_hal_imp, "true"))
+                    {
+                        wait_for_stack_response(1);
+                        if (audio_stream.ack_status == A2DP_CTRL_ACK_UNKNOWN)
+                        {
+                            ALOGW("audio_start_stream ack not received, fake as success");
+                            status = A2DP_CTRL_ACK_SUCCESS;
+                        }
+                        else
+                        {
+                            status = audio_stream.ack_status;
+                        }
+                    }
+                    else
+                    {
+                        wait_for_stack_response(5);
+                        status = audio_stream.ack_status;
+                    }
                     ALOGW("done waiting in pending status = %s",dump_a2dp_ctrl_ack(status));
                     audio_stream.ack_status = A2DP_CTRL_ACK_UNKNOWN;
                 }
@@ -799,6 +828,14 @@ int audio_start_stream()
                 {
                     ALOGW("a2dp stream start failed: status = %s",dump_a2dp_ctrl_ack(status));
                     audio_stream.state = AUDIO_A2DP_STATE_STOPPED;
+                    goto end;
+                }
+                else if (property_get("persist.bt.a2dp.hal.implementation", a2dp_hal_imp, "false") &&
+                        !strcmp(a2dp_hal_imp, "true") &&
+                        status == A2DP_CTRL_ACK_PREVIOUS_COMMAND_PENDING)
+                {
+                    ALOGW("a2dp stream start exited as prev command is pending, fake as success");
+                    audio_stream.state = AUDIO_A2DP_STATE_STARTED;
                     goto end;
                 }
                 else if (status == A2DP_CTRL_ACK_FAILURE)
@@ -851,6 +888,7 @@ end:
         return status;
     }
     pthread_mutex_unlock(&audio_stream.lock);
+    INFO("stream successfully started");
     return status;
 }
 
@@ -931,7 +969,15 @@ int audio_stop_stream()
             if (status == A2DP_CTRL_ACK_PENDING)
             {
                 ack_recvd = 0;
-                wait_for_stack_response(5);
+                if (property_get("persist.bt.a2dp.hal.implementation", a2dp_hal_imp, "false") &&
+                        !strcmp(a2dp_hal_imp, "true"))
+                {
+                    wait_for_stack_response(1);
+                }
+                else
+                {
+                    wait_for_stack_response(5);
+                }
                 status = audio_stream.ack_status;
                 audio_stream.ack_status = A2DP_CTRL_ACK_UNKNOWN;
                 if (status == A2DP_CTRL_ACK_SUCCESS) ret = 0;
@@ -939,6 +985,15 @@ int audio_stop_stream()
             else if (status == A2DP_CTRL_ACK_SUCCESS)
             {
                 ALOGW("audio stop stream successful");
+                audio_stream.state = AUDIO_A2DP_STATE_STANDBY;
+                pthread_mutex_unlock(&audio_stream.lock);
+                return 0;
+            }
+            else if (property_get("persist.bt.a2dp.hal.implementation", a2dp_hal_imp, "false") &&
+                    !strcmp(a2dp_hal_imp, "true") &&
+                    status == A2DP_CTRL_ACK_PREVIOUS_COMMAND_PENDING)
+            {
+                ALOGW("a2dp stream stop exited as prev command is pending, fake as success");
                 audio_stream.state = AUDIO_A2DP_STATE_STANDBY;
                 pthread_mutex_unlock(&audio_stream.lock);
                 return 0;
@@ -979,7 +1034,7 @@ int audio_suspend_stream()
                 ack_ret = wait_for_stack_response(1);
                 if (ack_ret == CTRL_CHAN_RETRY_COUNT && !ack_recvd)
                 {
-                    ALOGE("audio_stop_stream: Failed to get ack from stack");
+                    ALOGE("audio_suspend_stream: Failed to get ack from stack");
                     pthread_mutex_unlock(&audio_stream.lock);
                     return -1;
                 }
@@ -991,13 +1046,30 @@ int audio_suspend_stream()
             {
                 //TODO wait for the response;
                 ack_recvd = 0;
-                wait_for_stack_response(5);
+                if (property_get("persist.bt.a2dp.hal.implementation", a2dp_hal_imp, "false") &&
+                        !strcmp(a2dp_hal_imp, "true"))
+                {
+                    wait_for_stack_response(1);
+                }
+                else
+                {
+                    wait_for_stack_response(5);
+                }
                 status = audio_stream.ack_status;
                 audio_stream.ack_status = A2DP_CTRL_ACK_UNKNOWN;
             }
             else if (status == A2DP_CTRL_ACK_SUCCESS)
             {
                 ALOGW("audio suspend stream successful");
+                pthread_mutex_unlock(&audio_stream.lock);
+                audio_stream.state = AUDIO_A2DP_STATE_SUSPENDED;
+                return 0;
+            }
+            else if (property_get("persist.bt.a2dp.hal.implementation", a2dp_hal_imp, "false") &&
+                    !strcmp(a2dp_hal_imp, "true") &&
+                    status == A2DP_CTRL_ACK_PREVIOUS_COMMAND_PENDING)
+            {
+                ALOGW("a2dp stream suspend exited as prev command is pending, fake as success");
                 pthread_mutex_unlock(&audio_stream.lock);
                 audio_stream.state = AUDIO_A2DP_STATE_SUSPENDED;
                 return 0;
@@ -1098,6 +1170,14 @@ int audio_check_a2dp_ready()
     ALOGW("audio_check_a2dp_ready: state %s", dump_a2dp_hal_state(audio_stream.state));
     tA2DP_CTRL_ACK status;
     pthread_mutex_lock(&audio_stream.lock);
+    if (property_get("persist.bt.a2dp.hal.implementation", a2dp_hal_imp, "false") &&
+            !strcmp(a2dp_hal_imp, "true") &&
+            audio_stream.state == AUDIO_A2DP_STATE_SUSPENDED)
+    {
+        INFO("stream not ready to start");
+        pthread_mutex_unlock(&audio_stream.lock);
+        return 0;
+    }
     if (stack_cb != NULL)
     {
         audio_stream.ack_status = A2DP_CTRL_ACK_UNKNOWN;
