@@ -390,6 +390,7 @@ static void* a2dp_codec_parser(uint8_t *codec_cfg, audio_format_t *codec_type,
             ALOGW("LDAC codec");
             *codec_type = AUDIO_FORMAT_LDAC;
             ldac_codec_parser(codec_cfg);
+            if (sample_freq) *sample_freq = ldac_codec.sampling_rate;
             return ((void *)&ldac_codec);
         }
         memset(&aptx_codec,0,sizeof(audio_aptx_encoder_config_t));
@@ -1275,6 +1276,7 @@ void ldac_codec_parser(uint8_t *codec_cfg)
         default:
              ALOGE("Unknown sampling rate");
     }
+    ALOGW("%s: LDAC: sample rate: %lu", __func__, ldac_codec.sampling_rate);
     byte = *p_cfg++;
     len--;
     ldac_codec.channel_mode = (byte & A2D_LDAC_CHAN_MASK);
