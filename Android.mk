@@ -35,4 +35,5 @@ include $(TMP_LOCAL_PATH)/bthost_ipc/Android.mk
 include $(TMP_LOCAL_PATH)/wipower-host/Android.mk
 include $(TMP_LOCAL_PATH)/bt_logger/Android.mk
 include $(TMP_LOCAL_PATH)/libbt-logClient/Android.mk
+include $(TMP_LOCAL_PATH)/SHOtestapp/Android.mk
 #include $(call all-makefiles-under,$(LOCAL_PATH))
