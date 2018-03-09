@@ -331,6 +331,12 @@ void *snoop_dump_thread( void *context)
 
     snoop_log ("snoop_dump_thread starting");
 
+    if (snoop_open_file() != 0)
+    {
+       snoop_log("Unable to open snoop file! snoop_dump_thread terminated");
+       return NULL;
+    }
+
     sk = snoop_connect_to_source();
 
 /*
@@ -346,11 +352,6 @@ void *snoop_dump_thread( void *context)
     if ((bytes_recv == 0) || (bytes_recv == -1))
     {
         snoop_log("Error in reading the snoop file Header : ");
-        return NULL;
-    }
-
-    if (snoop_open_file() != 0)
-    {
         return NULL;
     }
 
