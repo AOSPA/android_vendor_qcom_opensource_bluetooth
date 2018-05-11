@@ -262,7 +262,7 @@ public class BluetoothFtpService extends Service {
 
         if (!mHasStarted) {
 
-            int state = mAdapter.getState();
+            int state = getState();
             Log.v(TAG, "FTP service not started Adapter STATE: "+state);
             if (state == BluetoothAdapter.STATE_ON) {
                 Log.v(TAG, "FTP service start listener");
@@ -302,6 +302,9 @@ public class BluetoothFtpService extends Service {
         return retCode;
     }
 
+    private int getState() {
+        return (mAdapter != null) ? mAdapter.getState() : BluetoothAdapter.ERROR;
+    }
     // process the intent from receiver
     private void parseIntent(final Intent intent) {
         String action = intent.getAction();
@@ -459,7 +462,7 @@ public class BluetoothFtpService extends Service {
             if (!initSocketOK) {
                      // Need to break out of this loop if BT is being turned off.
                 if (mAdapter == null) break;
-                int state = mAdapter.getState();
+                int state = getState();
                 if ((state != BluetoothAdapter.STATE_TURNING_ON) &&
                         (state != BluetoothAdapter.STATE_ON)) {
                     Log.w(TAG, "initRfcommServerSocket failed as BT is (being) turned off");
@@ -514,14 +517,17 @@ public class BluetoothFtpService extends Service {
         } catch (IOException ex) {
             Log.e(TAG, "CloseSocket error: " + ex);
         }
-        if (mRfcommAcceptThread != null) {
-            try {
-                mRfcommAcceptThread.shutdown();
-                mRfcommAcceptThread.join();
-                mRfcommAcceptThread = null;
-            } catch (InterruptedException ex) {
-                Log.w(TAG, "mAcceptThread close error" + ex);
+        synchronized (BluetoothFtpService.this) {
+            if (mRfcommAcceptThread != null) {
+                try {
+                    mRfcommAcceptThread.shutdown();
+                    mRfcommAcceptThread.join();
+                    mRfcommAcceptThread = null;
+                } catch (InterruptedException ex) {
+                    Log.w(TAG, "mAcceptThread close error" + ex);
+                }
             }
+            Log.d(TAG, "mRfcommAcceptThread stopped");
         }
 
         try {
