@@ -67,6 +67,7 @@ public class getSecondoryOptions extends Activity{
     public static ScrollView sv;
     public static String SOC_levels="";
     String mRome ="rome";
+    String mNaplesUart = "naples_uart";
     String bt_soc_type = SystemProperties.get("qcom.bluetooth.soc");
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -170,6 +171,8 @@ public class getSecondoryOptions extends Activity{
                         lv.setVisibility(View.GONE);
                         if (bt_soc_type.equals(mRome))
                             Log.d(Main.TAG,"soc type is rome dont enable SOC logging");
+                        else if (bt_soc_type.equals(mNaplesUart))
+                            Log.d(Main.TAG,"soc type is naples_uart dont enable SOC logging");
                         else
                         {
                             sendIntent.transmitIntent(this, 0, "F", Main.SOC_ALL_MODULE_ID);
@@ -238,6 +241,8 @@ public class getSecondoryOptions extends Activity{
                         Toast.makeText(getApplicationContext(), "SOC logging turned on", Toast.LENGTH_SHORT).show();
                         if (bt_soc_type.equals(mRome))
                             Log.d(Main.TAG,"soc type is rome dont enable SOC logging");
+                        else if (bt_soc_type.equals(mNaplesUart))
+                            Log.d(Main.TAG,"soc type is naples_uart dont enable SOC logging");
                         else
                         {
                             sendIntent.transmitIntent(getApplicationContext(), 0, SOC_levels, Main.SOC_ALL_MODULE_ID);
@@ -253,6 +258,8 @@ public class getSecondoryOptions extends Activity{
                         Utils.saveGlobalState(getApplicationContext());
                         if (bt_soc_type.equals(mRome))
                             Log.d(Main.TAG,"soc type is rome dont enable SOC logging");
+                        else if (bt_soc_type.equals(mNaplesUart))
+                            Log.d(Main.TAG,"soc type is naples_uart dont enable SOC logging");
                         else
                         {
                             sendIntent.transmitIntent(getApplicationContext(), 0, "F", Main.SOC_ALL_MODULE_ID);
