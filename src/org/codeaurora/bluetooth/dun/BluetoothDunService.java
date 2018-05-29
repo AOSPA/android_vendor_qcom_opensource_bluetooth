@@ -455,9 +455,10 @@ public class BluetoothDunService extends Service {
         if (action == null) return;  /* Nothing to do */
 
         boolean removeTimeoutMsg = true;
-        if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-            int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
-            if (VERBOSE) Log.v(TAG, "parseIntent: state: " + state);
+        if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)
+            || action.equals(Intent.ACTION_BOOT_COMPLETED)) {
+            int state = getState();
+            Log.i(TAG, "parseIntent: state: " + state);
             if ((state == BluetoothAdapter.STATE_ON) && (!mDunEnable)) {
                 synchronized(mConnection) {
                     try {
@@ -619,6 +620,9 @@ public class BluetoothDunService extends Service {
         }
     }
 
+    private int getState() {
+        return (mAdapter != null) ? mAdapter.getState() : BluetoothAdapter.ERROR;
+    }
     private void startRfcommListenerThread() {
         Log.i(TAG, "startRfcommListenerThread " + mAcceptThread);
 
