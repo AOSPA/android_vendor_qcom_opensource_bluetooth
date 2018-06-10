@@ -78,6 +78,7 @@ public class BTStateReceiver extends BroadcastReceiver{
         final String action = intent.getAction();
         Toast toast;
         String mRome ="rome";
+        String mNaplesUart = "naples_uart";
         String bt_soc_type;
 
         final int btstate = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
@@ -119,6 +120,8 @@ public class BTStateReceiver extends BroadcastReceiver{
                     {
                         if (bt_soc_type.equals(mRome))
                             Log.d(Main.TAG,"soc type is rome dont enable SOC logging");
+                        else if (bt_soc_type.equals(mNaplesUart))
+                            Log.d(Main.TAG,"soc type is naples_uart dont enable SOC logging");
                         else
                         {
                             sendIntent.transmitIntent(context, 0, "F", Main.SOC_ALL_MODULE_ID);
@@ -146,6 +149,8 @@ public class BTStateReceiver extends BroadcastReceiver{
                             }
                             if (bt_soc_type.equals(mRome))
                                 Log.d(Main.TAG,"soc type is rome dont enable SOC logging");
+                            else if (bt_soc_type.equals(mNaplesUart))
+                                Log.d(Main.TAG,"soc type is naples_uart dont enable SOC logging");
                             else
                             {
                                 Log.d(Main.TAG,"soc type is not rome enable SOC logging");
