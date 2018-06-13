@@ -453,7 +453,7 @@ int hci_send_cmd(int uart_fd, uint16_t ogf, uint16_t ocf, uint8_t plen, void *pa
     uint8_t head_len = 3;
     hci_command_hdr *ch;
 
-    if( is_qca_transport_uart || (!strcasecmp(soc_type, "300x"))) {  // cherokee/rome/ar3002/qca3003 uart
+    if( is_qca_transport_uart || (!strcasecmp(soc_type, "300x"))) {  // cherokee/rome/ar3002/qca3003 uart/naples_uart
         *p_buf++ = type;
         head_len ++;
     }
@@ -6771,7 +6771,7 @@ static int init_uart(char *dev, int user_specified_speed)
 //  if (read_hci_event(fd, rsp, sizeof(rsp)) < 0) {
 //      err = -ETIMEDOUT;
         // Firmware not ready, reconfig baud & download firmware
-    if (!strcasecmp(soc_type, "rome")) {
+    if (!strcasecmp(soc_type, "rome") || !strcasecmp(soc_type, "naples_uart")) {
         err = qca_rome_init(fd, flags, user_specified_speed, &ti);
         if (err < 0) {
             close(fd);
@@ -6836,7 +6836,7 @@ int main(int argc, char *argv[])
     property_get("qcom.bluetooth.soc", soc_type, NULL);
 #endif
 
-    if((!strcasecmp(soc_type, "rome")) || (!strcasecmp(soc_type, "cherokee")))
+    if((!strcasecmp(soc_type, "rome")) || (!strcasecmp(soc_type, "cherokee")) || (!strcasecmp(soc_type, "naples_uart")))
         is_qca_transport_uart = true;
 
     if(is_qca_transport_uart)  min_para = 1;
@@ -6860,6 +6860,8 @@ int main(int argc, char *argv[])
     } else if (is_qca_transport_uart){
         if(!strcasecmp(soc_type, "rome"))
             printf("SOC is ROME\n");
+        else if (!strcasecmp(soc_type, "naples_uart"))
+            printf("SOC is NAPLES_UART\n");
         else
             printf("SOC is CHEROKEE\n");
 #ifdef ANDROID
